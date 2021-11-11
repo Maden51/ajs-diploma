@@ -243,6 +243,7 @@ export default class GameController {
     }
     const dmg = Math.round(Math.max(attack - defence, attack * 0.1));
     this.gamePlay.showDamage(playerAsEnemy.position, dmg).then(() => {
+      // eslint-disable-next-line no-param-reassign
       playerAsEnemy.character.health -= dmg;
       if (playerAsEnemy.character.health <= 0) {
         if (playerAsEnemy.position === this.chosenCharacterCell) {
