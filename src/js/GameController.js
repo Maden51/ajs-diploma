@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import GamePlay from './GamePlay';
 import GameState from './GameState';
 import PositionedCharacter from './PositionedCharacter';
@@ -40,7 +41,7 @@ export default class GameController {
     } else if (player === 'gamer') {
       arrChar = generateTeam(new Team().gamer, level - 1, quantity);
     } else {
-      arrChar = generateTeam(new Team().npc, level, quantity);
+      arrChar = generateTeam(new Team().ai, level, quantity);
     }
     for (let i = 0; i < arrChar.length; i += 1) {
       const character = arrChar[i].newCharacter;
@@ -70,21 +71,32 @@ export default class GameController {
     }
   }
 
-  updateLevel() {
-    const lelevElem = document.querySelector('.level');
+  updateScores() {
+    const scoresElem = document.querySelector('.scores');
     if (GameState && GameState.level) {
-      lelevElem.innerText = `Level: ${GameState.level}`;
+      scoresElem.innerText = `Scores: ${GameState.scores}`;
     } else {
-      lelevElem.innerText = `Level: ${this.level}`;
+      scoresElem.innerText = `Scores: ${this.scores}`;
+    }
+  }
+
+  updateLevel() {
+    const levelElem = document.querySelector('.level');
+    if (GameState && GameState.level) {
+      levelElem.innerText = `Level: ${GameState.level}`;
+    } else {
+      levelElem.innerText = `Level: ${this.level}`;
     }
   }
 
   init() {
     if (GameState && GameState.level) {
       this.drawTheme(GameState.level);
+    } else {
+      this.gamePlay.drawUi(themes.prairie);
     }
-    this.gamePlay.drawUi(themes.prairie);
     this.updateLevel();
+    this.updateScores();
 
     if (GameState.chars && GameState.chars.length > 0) {
       this.createdTeam = [...GameState.chars];
@@ -93,7 +105,8 @@ export default class GameController {
       const aITeam = this.getPositionedCharacters('npc', 2);
       this.createdTeam = [...gamerTeam, ...aITeam];
     }
-    this.gamePlay.redrawPosition(this.createdTeam);
+    this.gamePlay.redrawPositions(this.createdTeam);
+    this.showCharInfo();
     if (!GameState.chars) {
       this.saveState('gamer');
     }
@@ -105,8 +118,6 @@ export default class GameController {
     if (GameState && GameState.activePlayer === 'npc') {
       this.npcWork();
     }
-    // TODO: add event listeners to gamePlay events
-    // TODO: load saved stated from stateService
   }
 
   saveState(player) {
@@ -120,7 +131,7 @@ export default class GameController {
   }
 
   showCharInfo() {
-    this.gamePlay.addCellEventListener(this.onCellEnter.bind(this));
+    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
     this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
   }
@@ -152,6 +163,74 @@ export default class GameController {
     } else {
       GamePlay.showMessage('No saved games detected');
     }
+  }
+
+  checkLvlUp() {
+    if (GameState.activePlayer === 'gamer') {
+      if (this.checkWin('npc') > 0) {
+        GameState.activePlayer = 'npc';
+        this.saveState('npc');
+        this.npcWork();
+      } else {
+        let scorePoints = 0;
+        GameState.chars.forEach((elem) => {
+          if (elem.character.health > 0) {
+            scorePoints += elem.character.health;
+          }
+        });
+        GameState.scores += scorePoints;
+        if (GameState.level < 4) {
+          GameState.level += 1;
+          this.levelUp();
+        } else {
+          this.saveState('gamer');
+          GamePlay.showMessage('Congratulations, you\'ve won');
+          this.endGame();
+        }
+      }
+    } else if (this.checkWin('gamer') > 0) {
+      GameState.activePlayer = 'gamer';
+      this.saveState('gamer');
+    } else {
+      GamePlay.showMessage('you\'ve lost');
+      this.endGame();
+    }
+    this.updateLevel();
+    this.updateScores();
+  }
+
+  endGame() {
+    this.gamePlay.cellClickListeners = [];
+    this.gamePlay.cellEnterListeners = [];
+    this.gamePlay.cellLeaveListeners = [];
+  }
+
+  levelUp() {
+    GamePlay.showMessage('Congratulation, you have passed this level');
+    const playerTeam = GameState.chars.filter((elem) => elem.character.team === 'gamer' && elem.character.health > 0);
+    playerTeam.forEach((elem) => {
+      elem.character.level += 1;
+      elem.character.attack = Math.max(
+        elem.character.attack,
+        elem.character.attack * ((1.8 - elem.character.health) / 100),
+      );
+      elem.character.health += 80;
+      if (elem.character.health > 100) {
+        elem.character.health = 100;
+      }
+    });
+    let playerNewCharacter = [];
+    if (GameState.level === 2) {
+      playerNewCharacter = this.positionedCharacters('gamer', 1);
+    } else {
+      playerNewCharacter = this.positionedCharacters('gamer', 2);
+    }
+    playerNewCharacter.forEach((elem) => playerTeam.push(elem));
+    const npcTeam = this.getPositionedCharacters('npc', playerTeam.length);
+    this.createdTeam = [...playerTeam, ...npcTeam];
+    this.drawTheme(GameState.level);
+    this.gamePlay.redrawPositions(this.createdTeam);
+    this.saveState('gamer');
   }
 
   npcWork() {
@@ -189,7 +268,7 @@ export default class GameController {
     const cell = Math.floor(Math.random() * moveZone.length);
     const char = this.createdTeam.findIndex((elem) => elem.position === index);
     this.createdTeam[char].position = moveZone[cell];
-    this.gamePlay.redrawPosition(this.createdTeam);
+    this.gamePlay.redrawPositions(this.createdTeam);
     this.saveState('gamer');
   }
 
@@ -241,10 +320,10 @@ export default class GameController {
     } else if (playerAsEnemy.character.type === 'Bowman') {
       defence = new Bowman().defence;
     }
-    const dmg = Math.round(Math.max(attack - defence, attack * 0.1));
-    this.gamePlay.showDamage(playerAsEnemy.position, dmg).then(() => {
+    const damage = Math.round(Math.max(attack - defence, attack * 0.1));
+    this.gamePlay.showDamage(playerAsEnemy.position, damage).then(() => {
       // eslint-disable-next-line no-param-reassign
-      playerAsEnemy.character.health -= dmg;
+      playerAsEnemy.character.health -= damage;
       if (playerAsEnemy.character.health <= 0) {
         if (playerAsEnemy.position === this.chosenCharacterCell) {
           this.gamePlay.deselectCell(playerAsEnemy.position);
@@ -252,15 +331,16 @@ export default class GameController {
         }
       }
       this.createdTeam = this.createdTeam.filter((elem) => elem.character.health > 0);
-      this.gamePlay.redrawPosition(this.createdTeam);
+      this.gamePlay.redrawPositions(this.createdTeam);
       this.saveState('npc');
+      this.checkLvlUp();
     });
   }
 
   onCellClick(index) {
     // TODO: react to click
     if (this.gamePlay.cells[index].children.length > 0) {
-      const characterClass = this.gamePlay[index].querySelector('.character').className;
+      const characterClass = this.gamePlay.cells[index].querySelector('.character').className;
       if (characterClass.includes('gamer')) {
         const selectedCell = this.gamePlay.cells.indexOf(document.querySelector('.selected-yellow'));
         if (selectedCell >= 0) {
@@ -273,10 +353,10 @@ export default class GameController {
         if (canMakeDmg === true) {
           this.attackChar(index);
         } else {
-          GamePlay.showError('Персонаж находится слишком далеко для атаки');
+          GamePlay.showError('Hero is too far to attack');
         }
       } else {
-        GamePlay.showError('это не играбельный персонаж!');
+        GamePlay.showError('Its not your hero!');
       }
     } else {
       const canMove = this.checkToMove(index);
@@ -332,12 +412,13 @@ export default class GameController {
   moveChar(index) {
     const char = this.createdTeam.findIndex((item) => item.position === this.chosenCharacterCell);
     this.createdTeam[char].position = index;
-    this.gamePlay.redrawPosition(this.createdTeam);
+    this.gamePlay.redrawPositions(this.createdTeam);
     this.saveState('npc');
     this.chosenCharacterCell = index;
     const selectedCell = this.gamePlay.cells.indexOf(document.querySelector('.selected-yellow'));
     this.gamePlay.deselectCell(selectedCell);
     this.gamePlay.selectCell(index);
+    this.npcWork();
   }
 
   attackChar(index) {
@@ -365,10 +446,11 @@ export default class GameController {
     ));
     this.gamePlay.showDamage(index, damage).then(() => {
       const enemy = this.createdTeam.findIndex((item) => item.position === index);
-      this.createdTeam[enemy].char.health -= damage;
-      this.createdTeam = this.createdTeam.filter((item) => item.char.health > 0);
-      this.gamePlay.redrawPosition(this.createdTeam);
+      this.createdTeam[enemy].character.health -= damage;
+      this.createdTeam = this.createdTeam.filter((item) => item.character.health > 0);
+      this.gamePlay.redrawPositions(this.createdTeam);
       this.saveState('gamer');
+      this.checkLvlUp();
     });
   }
 

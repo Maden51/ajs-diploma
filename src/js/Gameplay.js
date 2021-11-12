@@ -36,6 +36,10 @@ export default class GamePlay {
         <button data-id="action-save" class="btn">Save Game</button>
         <button data-id="action-load" class="btn">Load Game</button>
       </div>
+      <div class="scoresbox">
+        <div class="level"></div>
+        <div class="scores"></div>
+      </div>
       <div class="board-container">
         <div data-id="board" class="board"></div>
       </div>
@@ -77,13 +81,13 @@ export default class GamePlay {
     for (const position of positions) {
       const cellEl = this.boardEl.children[position.position];
       const charEl = document.createElement('div');
-      charEl.classList.add('character', position.character.type);
+      charEl.classList.add('character', position.character.type, position.character.team);
 
       const healthEl = document.createElement('div');
-      healthEl.classList.add('health-level');
+      healthEl.classList.add('health-level', position.character.level);
 
       const healthIndicatorEl = document.createElement('div');
-      healthIndicatorEl.classList.add('health-level-indicator', `health-level-indicator-${calcHealthLevel(position.character.health)}`);
+      healthIndicatorEl.classList.add(position.character.health, 'health-level-indicator', `health-level-indicator-${calcHealthLevel(position.character.health)}`);
       healthIndicatorEl.style.width = `${position.character.health}%`;
       healthEl.appendChild(healthIndicatorEl);
 

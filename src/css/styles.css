@@ -12,7 +12,7 @@
     font-size: 16px;
   }
   
-  .btn {
+  .btn, .scores, .level {
     display: inline-block;
     font-weight: 400;
     color: #212529;
@@ -25,6 +25,17 @@
     border-radius: .25rem;
     transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
     border: none;
+  }
+
+  .scores, .level {
+    margin: 0, 10px;
+  }
+
+  .scoresbox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 30px 0;
   }
   
   .controls {
@@ -173,35 +184,35 @@
     z-index: 99;
   }
   
-  .character.generic {
+  .character.Generic {
     background: url('../img/characters/generic.png');
   }
   
-  .character.bowman {
+  .character.Bowman {
     background: url('../img/characters/bowman.png');
   }
   
-  .character.daemon {
+  .character.Daemon {
     background: url('../img/characters/daemon.png');
   }
   
-  .character.magician {
+  .character.Magician {
     background: url('../img/characters/magician.png');
   }
   
-  .character.swordsman {
+  .character.Swordsman {
     background: url('../img/characters/swordsman.png');
   }
   
-  .character.undead {
+  .character.Undead {
     background: url('../img/characters/undead.png');
   }
   
-  .character.vampire {
+  .character.Vampire {
     background: url('../img/characters/vampire.png');
   }
   
-  .character.zombie {
+  .character.Zombie {
     background: url('../img/characters/zombie.png');
   }
   
