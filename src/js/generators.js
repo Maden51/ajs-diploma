@@ -17,7 +17,7 @@ export function getPosition(player, quantity) {
       cells.push(i * boardSize + 1);
     }
   } else if (player === 'npc') {
-    for (let i = 0; i < boardSize; i += 1) {
+    for (let i = 1; i <= boardSize; i += 1) {
       cells.push(i * boardSize - 1);
       cells.push(i * boardSize - 2);
     }

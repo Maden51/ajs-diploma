@@ -27,8 +27,8 @@
     border: none;
   }
 
-  .scores, .level {
-    margin: 0, 10px;
+  .level {
+    margin-right: 10px;
   }
 
   .scoresbox {

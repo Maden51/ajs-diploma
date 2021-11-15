@@ -123,7 +123,7 @@ export default class GameController {
   saveState(player) {
     this.stateService.save({
       chars: this.createdTeam,
-      activeplayer: player,
+      activePlayer: player,
       level: this.level,
       scores: this.scores,
     });
@@ -156,7 +156,7 @@ export default class GameController {
   }
 
   onLoadGameClick() {
-    if (this.stateService.storage.getItem('Userstate')) {
+    if (this.stateService.storage.getItem('UserState')) {
       GameState.from(this.stateService.userLoad());
       this.chosenCharacterCell = -1;
       this.init();
@@ -244,11 +244,11 @@ export default class GameController {
       }
     }
     const char = chars[charsHp.indexOf(Math.min(...charsHp))];
-    const playerAsEnemy = this.findNpcEnemy(char.position, char.character.type);
-    if (playerAsEnemy === false) {
+    const enemy = this.findNpcEnemy(char.position, char.character.type);
+    if (enemy === false) {
       this.npcMove(char.position, char.character.type);
     } else {
-      this.npcAttack(playerAsEnemy, char.character.type);
+      this.npcAttack(enemy, char.character.type);
     }
   }
 
@@ -295,7 +295,7 @@ export default class GameController {
     if (enemiesInZone.length === 0) {
       return false;
     }
-    if (enemiesInZone.length > 0) {
+    if (enemiesInZone.length > 1) {
       const hp = [];
       enemiesInZone.forEach((elem) => hp.push(elem.character.health));
       return enemiesInZone[hp.indexOf(Math.min(...hp))];
@@ -303,7 +303,7 @@ export default class GameController {
     return enemiesInZone[0];
   }
 
-  npcAttack(playerAsEnemy, character) {
+  npcAttack(enemy, character) {
     let attack;
     let defence;
     if (character === 'Daemon') {
@@ -313,20 +313,19 @@ export default class GameController {
     } else if (character === 'Undead') {
       attack = new Undead().attack;
     }
-    if (playerAsEnemy.character.type === 'Swordsman') {
+    if (enemy.character.type === 'Swordsman') {
       defence = new Swordsman().defence;
-    } else if (playerAsEnemy.character.type === 'Magician') {
+    } else if (enemy.character.type === 'Magician') {
       defence = new Magician().defence;
-    } else if (playerAsEnemy.character.type === 'Bowman') {
+    } else if (enemy.character.type === 'Bowman') {
       defence = new Bowman().defence;
     }
     const damage = Math.round(Math.max(attack - defence, attack * 0.1));
-    this.gamePlay.showDamage(playerAsEnemy.position, damage).then(() => {
-      // eslint-disable-next-line no-param-reassign
-      playerAsEnemy.character.health -= damage;
-      if (playerAsEnemy.character.health <= 0) {
-        if (playerAsEnemy.position === this.chosenCharacterCell) {
-          this.gamePlay.deselectCell(playerAsEnemy.position);
+    this.gamePlay.showDamage(enemy.position, damage).then(() => {
+      enemy.character.health -= damage;
+      if (enemy.character.health <= 0) {
+        if (enemy.position === this.chosenCharacterCell) {
+          this.gamePlay.deselectCell(enemy.position);
           this.chosenCharacterCell = -1;
         }
       }
@@ -451,6 +450,7 @@ export default class GameController {
       this.gamePlay.redrawPositions(this.createdTeam);
       this.saveState('gamer');
       this.checkLvlUp();
+      this.npcWork();
     });
   }
 
