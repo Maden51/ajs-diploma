@@ -221,9 +221,9 @@ export default class GameController {
     });
     let playerNewCharacter = [];
     if (GameState.level === 2) {
-      playerNewCharacter = this.positionedCharacters('gamer', 1);
+      playerNewCharacter = this.getPositionedCharacters('gamer', 1);
     } else {
-      playerNewCharacter = this.positionedCharacters('gamer', 2);
+      playerNewCharacter = this.getPositionedCharacters('gamer', 2);
     }
     playerNewCharacter.forEach((elem) => playerTeam.push(elem));
     const npcTeam = this.getPositionedCharacters('npc', playerTeam.length);
@@ -306,6 +306,8 @@ export default class GameController {
   npcAttack(enemy, character) {
     let attack;
     let defence;
+    console.log('enemy', enemy);
+    console.log('character', character);
     if (character === 'Daemon') {
       attack = new Daemon().attack;
     } else if (character === 'Vampire') {
@@ -322,7 +324,9 @@ export default class GameController {
     }
     const damage = Math.round(Math.max(attack - defence, attack * 0.1));
     this.gamePlay.showDamage(enemy.position, damage).then(() => {
+      console.log(this.createdTeam);
       enemy.character.health -= damage;
+      console.log(`enemy health: ${enemy.character.health}`);
       if (enemy.character.health <= 0) {
         if (enemy.position === this.chosenCharacterCell) {
           this.gamePlay.deselectCell(enemy.position);
